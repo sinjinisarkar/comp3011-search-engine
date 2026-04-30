@@ -1,7 +1,9 @@
+# src/crawler.py
 import requests
 import time
+from collections import deque
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlunparse
 
 
 class Crawler:
@@ -14,6 +16,30 @@ class Crawler:
         self.base_url = base_url
         self.politeness_delay = politeness_delay
         self.visited: set[str] = set()
+        self.headers = {"User-Agent": "UniversityCrawler/1.0 (Educational Project)"}
+
+    def _normalise_url(self, url: str) -> str:
+        """
+        Normalise a URL by:
+        - Removing query parameters (?sort=asc etc)
+        - Removing fragments (#section)
+        - Enforcing a consistent trailing slash
+        This prevents the same page being crawled multiple times.
+        """
+        parsed = urlparse(url)
+        # Rebuild URL without query string or fragment
+        normalised = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            "",   # params
+            "",   # query — stripped
+            ""    # fragment — stripped
+        ))
+        # Enforce trailing slash for consistency
+        if not normalised.endswith("/"):
+            normalised += "/"
+        return normalised
 
     def _is_valid_url(self, url: str) -> bool:
         """
@@ -35,42 +61,49 @@ class Crawler:
         for tag in soup.find_all("a", href=True):
             # Convert relative URLs like /page/2/ to full URLs
             full_url = urljoin(current_url, tag["href"])
-            # Remove fragments e.g. /page/1/#section
-            full_url = full_url.split("#")[0]
-            if self._is_valid_url(full_url) and full_url not in self.visited:
+            # Normalise — removes fragments, query params, enforces trailing slash
+            full_url = self._normalise_url(full_url)
+            if self._is_valid_url(full_url):
                 links.append(full_url)
         return links
 
     def crawl(self) -> dict[str, str]:
         """
         Crawl the entire website using BFS (breadth-first search).
+        Uses deque for O(1) popleft instead of O(n) list.pop(0).
         Returns a dict of {url: html_text} for every page visited.
         """
         pages: dict[str, str] = {}
-        queue = [self.base_url]
+        # deque is more efficient than list for BFS queue
+        queue: deque[str] = deque([self._normalise_url(self.base_url)])
+        # Track queued URLs separately to prevent duplicates entering queue
+        queued: set[str] = {self._normalise_url(self.base_url)}
 
         while queue:
-            url = queue.pop(0)
+            url = queue.popleft()  # O(1) with deque vs O(n) with list
 
             if url in self.visited:
                 continue
 
             try:
                 print(f"Crawling: {url}")
-                response = requests.get(url, timeout=10)
+                response = requests.get(url, timeout=10, headers=self.headers)
                 response.raise_for_status()  # raises error for 4xx/5xx responses
 
                 self.visited.add(url)
                 pages[url] = response.text
 
-                # Find new links on this page and add to queue
+                # Find new links and only add if not already queued or visited
                 new_links = self._get_links(response.text, url)
-                queue.extend(new_links)
+                for link in new_links:
+                    if link not in self.visited and link not in queued:
+                        queue.append(link)
+                        queued.add(link)
 
             except (requests.RequestException, Exception) as e:
                 print(f"Error fetching {url}: {e}")
 
-            # Always wait, even if the request failed
+            # Always wait — even if the request failed
             time.sleep(self.politeness_delay)
 
         return pages
