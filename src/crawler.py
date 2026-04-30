@@ -67,7 +67,7 @@ class Crawler:
                 new_links = self._get_links(response.text, url)
                 queue.extend(new_links)
 
-            except requests.RequestException as e:
+            except (requests.RequestException, Exception) as e:
                 print(f"Error fetching {url}: {e}")
 
             # Always wait, even if the request failed
