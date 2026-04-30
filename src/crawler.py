@@ -44,11 +44,16 @@ class Crawler:
     def _is_valid_url(self, url: str) -> bool:
         """
         Check the URL belongs to the same domain as base_url.
+        Also filters out non-HTTP schemes like mailto: and javascript:
         We don't want to crawl outside quotes.toscrape.com
         """
         parsed = urlparse(url)
         base_parsed = urlparse(self.base_url)
-        return parsed.netloc == base_parsed.netloc
+        return (
+            parsed.netloc == base_parsed.netloc and
+            parsed.scheme in ("http", "https") and
+            parsed.path != base_parsed.path  # ignore links that resolve to base
+        )
 
     def _get_links(self, html: str, current_url: str) -> list[str]:
         """

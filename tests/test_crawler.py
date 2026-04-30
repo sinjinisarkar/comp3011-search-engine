@@ -2,6 +2,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from src.crawler import Crawler
+from requests.exceptions import HTTPError
+
 
 
 class TestNormaliseUrl:
@@ -153,3 +155,86 @@ class TestCrawl:
         # Check User-Agent header was included in the request
         call_kwargs = mock_get.call_args[1]
         assert "User-Agent" in call_kwargs["headers"]
+
+class TestHttpErrors:
+    @patch("src.crawler.time.sleep")
+    @patch("src.crawler.requests.get")
+    def test_crawl_handles_http_error_status(self, mock_get, mock_sleep):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = HTTPError("404 Not Found")
+        mock_get.return_value = mock_response
+
+        c = Crawler("https://quotes.toscrape.com/")
+        pages = c.crawl()
+
+        # Page should not be stored if HTTP error occurs
+        assert pages == {}
+        assert mock_get.call_count == 1
+
+
+class TestMultiPageCrawl:
+    @patch("src.crawler.time.sleep")
+    @patch("src.crawler.requests.get")
+    def test_crawl_follows_links_across_pages(self, mock_get, mock_sleep):
+        # Page 1 links to Page 2
+        page1 = MagicMock()
+        page1.text = '<a href="/page/2/">Next</a>'
+        page1.raise_for_status = MagicMock()
+
+        # Page 2 has no links
+        page2 = MagicMock()
+        page2.text = "<p>Last page</p>"
+        page2.raise_for_status = MagicMock()
+
+        mock_get.side_effect = [page1, page2]
+
+        c = Crawler("https://quotes.toscrape.com/")
+        pages = c.crawl()
+
+        assert "https://quotes.toscrape.com/" in pages
+        assert "https://quotes.toscrape.com/page/2/" in pages
+        assert mock_get.call_count == 2
+
+
+class TestUrlNormalisationInCrawl:
+    @patch("src.crawler.time.sleep")
+    @patch("src.crawler.requests.get")
+    def test_normalised_urls_not_crawled_twice(self, mock_get, mock_sleep):
+        mock_response = MagicMock()
+        mock_response.text = '''
+            <a href="/page/2">No slash</a>
+            <a href="/page/2/">With slash</a>
+        '''
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
+        c = Crawler("https://quotes.toscrape.com/")
+        c.crawl()
+
+        urls = [call[0][0] for call in mock_get.call_args_list]
+        # page/2 should only be fetched once after normalisation
+        assert urls.count("https://quotes.toscrape.com/page/2/") <= 1
+
+
+class TestMalformedHtml:
+    def test_get_links_handles_broken_html(self):
+        c = Crawler("https://quotes.toscrape.com/")
+        html = "<html><a href='/page/2'Broken"
+        links = c._get_links(html, "https://quotes.toscrape.com/")
+        assert isinstance(links, list)
+
+
+class TestNonHttpLinks:
+    def test_ignores_non_http_links(self):
+        c = Crawler("https://quotes.toscrape.com/")
+        html = '''
+            <a href="mailto:test@example.com">Mail</a>
+            <a href="javascript:void(0)">JS</a>
+            <a href="#">Anchor</a>
+            <a href="/page/2/">Valid</a>
+        '''
+        links = c._get_links(html, c.base_url)
+        assert "https://quotes.toscrape.com/page/2/" in links
+        # Ensure non-HTTP links are excluded
+        assert not any("mailto" in l for l in links)
+        assert not any("javascript" in l for l in links)
