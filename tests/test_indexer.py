@@ -1,4 +1,3 @@
-# tests/test_indexer.py
 import pytest
 import json
 from src.indexer import Indexer

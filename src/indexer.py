@@ -1,4 +1,3 @@
-# src/indexer.py
 import re
 import json
 from pathlib import Path
