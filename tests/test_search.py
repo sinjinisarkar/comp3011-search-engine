@@ -113,20 +113,33 @@ class TestFind:
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
         results = engine.find("good")
         assert isinstance(results, list)
+    
+    def test_find_deduplicates_query_terms(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        # "good good" should behave same as "good"
+        results1 = engine.find("good")
+        results2 = engine.find("good good")
+        assert results1 == results2
+
+    def test_find_rarest_word_first_optimisation(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        # "friends good" and "good friends" should return same results
+        results1 = engine.find("good friends")
+        results2 = engine.find("friends good")
+        assert results1 == results2
 
 
 class TestTfidf:
     def test_higher_frequency_scores_higher(self):
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
-        total = len(SAMPLE_DOC_LENGTHS)
-        # "friends" only appears in 1 doc so IDF won't be zero
-        # page1 has frequency 2 — use different word with non-zero IDF
-        score_friends = engine._tfidf("friends", "http://example.com/1", total)
-        score_indifference = engine._tfidf("indifference", "http://example.com/3", total)
-        # both appear in only 1 doc, friends has higher frequency so scores higher
+        # friends has frequency 2, indifference has frequency 1
+        # both appear in only 1 doc so IDF is the same
+        # friends should score higher due to higher frequency
+        score_friends = engine._tfidf("friends", "http://example.com/1")
+        score_indifference = engine._tfidf("indifference", "http://example.com/3")
         assert score_friends > score_indifference
 
     def test_tfidf_returns_float(self):
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
-        score = engine._tfidf("good", "http://example.com/1", 3)
+        score = engine._tfidf("good", "http://example.com/1")
         assert isinstance(score, float)
