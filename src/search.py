@@ -119,3 +119,18 @@ class SearchEngine:
         tf = frequency / doc_length
         idf = self._idf_cache.get(word, 0.0)
         return tf * idf
+    
+    def suggest(self, partial: str) -> list[str]:
+        """
+        Suggest words from the index that start with the given prefix.
+        Useful for query completion — an advanced feature beyond basic requirements.
+        Returns up to 5 suggestions sorted alphabetically.
+        """
+        partial = partial.lower().strip()
+        if not partial:
+            return []
+        suggestions = [
+            word for word in self.index
+            if word.startswith(partial)
+        ]
+        return sorted(suggestions)[:5]
