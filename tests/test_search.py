@@ -143,3 +143,34 @@ class TestTfidf:
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
         score = engine._tfidf("good", "http://example.com/1")
         assert isinstance(score, float)
+
+class TestSuggest:
+    def test_suggest_returns_matching_words(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("fri")
+        assert "friends" in results
+
+    def test_suggest_empty_prefix_returns_empty(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("")
+        assert results == []
+
+    def test_suggest_no_match_returns_empty(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("xyz")
+        assert results == []
+
+    def test_suggest_returns_max_five(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("g")
+        assert len(results) <= 5
+
+    def test_suggest_case_insensitive(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("FRI")
+        assert "friends" in results
+
+    def test_suggest_returns_sorted(self):
+        engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
+        results = engine.suggest("g")
+        assert results == sorted(results)
