@@ -15,9 +15,9 @@ BASE_URL = "https://quotes.toscrape.com/"
 
 def print_help():
     """Print all available commands with descriptions."""
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 80)
     print("  Available Commands")
-    print("=" * 60)
+    print("=" * 80)
     print("  build              Crawl the website and build the index")
     print("  load               Load a previously saved index from disk")
     print("  print <word>       Show index entry for a word")
@@ -25,19 +25,19 @@ def print_help():
     print("  suggest <prefix>   Suggest words starting with a prefix")
     print("  help               Show this help message")
     print("  quit               Exit the program")
-    print("=" * 60)
+    print("=" * 80)
 
 
 def main():
     indexer = Indexer()
     engine = None
 
-    print("=" * 60)
+    print("=" * 80)
     print("  Search Engine — COMP3011 Coursework 2")
-    print("=" * 60)
+    print("=" * 80)
     print("  Commands: build | load | print | find | suggest | help | quit")
     print("  Type 'help' for detailed command descriptions.")
-    print("=" * 60)
+    print("=" * 80)
 
     while True:
         try:
@@ -100,9 +100,15 @@ def main():
             else:
                 suggestions = engine.suggest(argument)
                 if suggestions:
-                    print(f"Suggestions: {', '.join(suggestions)}")
+                    print(f"\n{'='*80}")
+                    print(f"  Suggestions for '{argument}'")
+                    print(f"{'='*80}")
+                    for word in suggestions:
+                        count = len(engine.index[word])
+                        print(f"  → {word:<20} (appears in {count} pages)")
+                    print(f"{'='*80}")
                 else:
-                    print(f"No suggestions found for '{argument}'")
+                    print(f"\n  No suggestions found for '{argument}'")
 
         elif command == "help":
             print_help()
