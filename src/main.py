@@ -13,6 +13,21 @@ INDEX_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "index.json")
 BASE_URL = "https://quotes.toscrape.com/"
 
 
+def print_help():
+    """Print all available commands with descriptions."""
+    print("\n" + "=" * 60)
+    print("  Available Commands")
+    print("=" * 60)
+    print("  build              Crawl the website and build the index")
+    print("  load               Load a previously saved index from disk")
+    print("  print <word>       Show index entry for a word")
+    print("  find <query>       Find pages containing all query words")
+    print("  suggest <prefix>   Suggest words starting with a prefix")
+    print("  help               Show this help message")
+    print("  quit               Exit the program")
+    print("=" * 60)
+
+
 def main():
     indexer = Indexer()
     engine = None
@@ -20,7 +35,8 @@ def main():
     print("=" * 60)
     print("  Search Engine — COMP3011 Coursework 2")
     print("=" * 60)
-    print("Commands: build | load | print <word> | find <query> | suggest <prefix> | quit")
+    print("  Commands: build | load | print | find | suggest | help | quit")
+    print("  Type 'help' for detailed command descriptions.")
     print("=" * 60)
 
     while True:
@@ -74,7 +90,7 @@ def main():
                 print("Example: find good friends")
             else:
                 engine.find(argument)
-        
+
         elif command == "suggest":
             if not engine:
                 print("No index loaded. Run 'build' or 'load' first.")
@@ -88,13 +104,16 @@ def main():
                 else:
                     print(f"No suggestions found for '{argument}'")
 
+        elif command == "help":
+            print_help()
+
         elif command == "quit" or command == "exit":
             print("Goodbye!")
             break
 
         else:
             print(f"Unknown command: '{command}'")
-            print("Available commands: build | load | print <word> | find <query> | quit")
+            print("Type 'help' to see all available commands.")
 
 
 if __name__ == "__main__":
