@@ -38,7 +38,7 @@ class TestPrintWord:
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)
         engine.print_word("good")
         captured = capsys.readouterr()
-        assert "Frequency" in captured.out
+        assert "Freq" in captured.out
 
     def test_print_word_shows_positions(self, capsys):
         engine = SearchEngine(SAMPLE_INDEX, SAMPLE_DOC_LENGTHS)

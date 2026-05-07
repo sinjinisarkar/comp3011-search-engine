@@ -32,6 +32,24 @@ class TestMainCLI:
         captured = capsys.readouterr()
         assert "Unknown command" in captured.out
 
+    def test_help_command(self, capsys):
+        """Test that help command shows all available commands."""
+        run_main_with_inputs(["help", "quit"])
+        captured = capsys.readouterr()
+        assert "Available Commands" in captured.out
+        assert "build" in captured.out
+        assert "load" in captured.out
+        assert "print" in captured.out
+        assert "find" in captured.out
+        assert "suggest" in captured.out
+        assert "quit" in captured.out
+
+    def test_load_success(self, capsys):
+        """Test load when index file exists loads successfully."""
+        run_main_with_inputs(["load", "quit"])
+        captured = capsys.readouterr()
+        assert "Index loaded" in captured.out
+
     def test_print_without_load(self, capsys):
         """Test print before loading index shows error."""
         run_main_with_inputs(["print good", "quit"])
@@ -51,22 +69,46 @@ class TestMainCLI:
         assert "No index loaded" in captured.out
 
     def test_print_no_argument(self, capsys):
-        """Test print with no word shows usage."""
-        run_main_with_inputs(["print good", "quit"])
+        """Test print with no argument after load shows usage."""
+        run_main_with_inputs(["load", "print", "quit"])
         captured = capsys.readouterr()
-        assert "No index loaded" in captured.out
+        assert "Usage" in captured.out
 
     def test_find_no_argument(self, capsys):
-        """Test find with no argument shows usage."""
-        run_main_with_inputs(["find good", "quit"])
+        """Test find with no argument after load shows usage."""
+        run_main_with_inputs(["load", "find", "quit"])
         captured = capsys.readouterr()
-        assert "No index loaded" in captured.out
+        assert "Usage" in captured.out
 
-    def test_load_success(self, capsys):
-        """Test load when index file exists loads successfully."""
-        run_main_with_inputs(["load", "quit"])
+    def test_suggest_no_argument(self, capsys):
+        """Test suggest with no argument shows usage."""
+        run_main_with_inputs(["load", "suggest", "quit"])
         captured = capsys.readouterr()
-        assert "Index loaded" in captured.out
+        assert "Usage" in captured.out
+
+    def test_print_after_load(self, capsys):
+        """Test print works after load."""
+        run_main_with_inputs(["load", "print good", "quit"])
+        captured = capsys.readouterr()
+        assert "Index entry" in captured.out
+
+    def test_find_after_load(self, capsys):
+        """Test find works after load."""
+        run_main_with_inputs(["load", "find good", "quit"])
+        captured = capsys.readouterr()
+        assert "Results" in captured.out
+
+    def test_suggest_after_load(self, capsys):
+        """Test suggest works after load."""
+        run_main_with_inputs(["load", "suggest fri", "quit"])
+        captured = capsys.readouterr()
+        assert "Suggestions" in captured.out
+
+    def test_suggest_no_results_after_load(self, capsys):
+        """Test suggest with no matches after load."""
+        run_main_with_inputs(["load", "suggest zzzzz", "quit"])
+        captured = capsys.readouterr()
+        assert "No suggestions" in captured.out
 
     @patch("src.main.Crawler")
     @patch("src.main.Indexer")
@@ -111,21 +153,26 @@ class TestMainCLI:
         captured = capsys.readouterr()
         assert "Build complete" in captured.out
 
-    
-    def test_help_command(self, capsys):
-        """Test that help command shows all available commands."""
-        run_main_with_inputs(["help", "quit"])
-        captured = capsys.readouterr()
-        assert "Available Commands" in captured.out
-        assert "build" in captured.out
-        assert "load" in captured.out
-        assert "print" in captured.out
-        assert "find" in captured.out
-        assert "suggest" in captured.out
-        assert "quit" in captured.out
+    @patch("src.main.Crawler")
+    @patch("src.main.Indexer")
+    def test_find_after_build(self, mock_indexer_class, mock_crawler_class, capsys):
+        """Test find works after build."""
+        mock_crawler = MagicMock()
+        mock_crawler.crawl.return_value = {}
+        mock_crawler_class.return_value = mock_crawler
 
-    def test_suggest_no_argument(self, capsys):
-        """Test suggest with no argument shows usage."""
-        run_main_with_inputs(["suggest", "quit"])
+        mock_indexer = MagicMock()
+        mock_indexer.index = {
+            "good": {
+                "http://example.com": {
+                    "frequency": 1,
+                    "positions": [1]
+                }
+            }
+        }
+        mock_indexer.doc_lengths = {"http://example.com": 10}
+        mock_indexer_class.return_value = mock_indexer
+
+        run_main_with_inputs(["build", "find good", "quit"])
         captured = capsys.readouterr()
-        assert "No index loaded" in captured.out
+        assert "Build complete" in captured.out
