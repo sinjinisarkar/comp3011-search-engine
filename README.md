@@ -219,6 +219,29 @@ A simpler dictionary of lists was considered but rejected — it cannot support 
 
 ---
 
+## Performance Benchmarking
+
+### Build Performance
+- Pages crawled: 213
+- Total build time: recorded during video demonstration
+- Each page takes around 6 seconds due to the politeness window, plus a small amount of time for the actual network request and HTML parsing
+- The final index contains 4324 unique words across 213 pages
+
+### Search Performance
+All search operations are timed and shown directly in the terminal when you run a command. These are the actual times recorded on a MacBook:
+
+| Operation | Time |
+|---|---|
+| `load` index from disk | 0.044s |
+| `print` single word | 0.0010s |
+| `find` single word (38 results) | 0.0010s |
+| `find` multi-word query (3 terms) | 0.0010s |
+| `suggest` prefix lookup | 0.0021s |
+
+Every search completes in under 5 milliseconds. This is because the index uses dictionary lookups which are O(1), IDF scores are calculated once at startup rather than on every query, and multi-word searches always start with the rarest word to keep the result set small from the beginning.
+
+---
+
 ## Dependencies
 
 | Package | Purpose |
