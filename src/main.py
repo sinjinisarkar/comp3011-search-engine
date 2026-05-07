@@ -1,6 +1,7 @@
 # src/main.py
 import sys
 import os
+import time
 
 # Allow running directly from src/ folder
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -57,19 +58,23 @@ def main():
             print("\nStarting crawl — this will take several minutes")
             print("due to the 6 second politeness window...")
             print("Please wait.\n")
+            start = time.time()
             crawler = Crawler(BASE_URL)
             pages = crawler.crawl()
             print(f"\nCrawled {len(pages)} pages. Building index...")
             indexer.build(pages)
             indexer.save(INDEX_PATH)
             engine = SearchEngine(indexer.index, indexer.doc_lengths)
-            print("Build complete! You can now use print and find commands.")
+            elapsed = time.time() - start
+            print(f"Build complete! You can now use print and find commands. ({elapsed:.1f}s)")
 
         elif command == "load":
             try:
+                start = time.time()
                 indexer.load(INDEX_PATH)
                 engine = SearchEngine(indexer.index, indexer.doc_lengths)
-                print("Index loaded. You can now use print and find commands.")
+                elapsed = time.time() - start
+                print(f"Index loaded. You can now use print and find commands. ({elapsed:.3f}s)")
             except FileNotFoundError as e:
                 print(f"Error: {e}")
 
@@ -80,7 +85,10 @@ def main():
                 print("Usage: print <word>")
                 print("Example: print good")
             else:
+                start = time.time()
                 engine.print_word(argument)
+                elapsed = time.time() - start
+                print(f"  Query completed in {elapsed:.4f}s")
 
         elif command == "find":
             if not engine:
@@ -89,7 +97,10 @@ def main():
                 print("Usage: find <word> [word2 ...]")
                 print("Example: find good friends")
             else:
+                start = time.time()
                 engine.find(argument)
+                elapsed = time.time() - start
+                print(f"  Query completed in {elapsed:.4f}s")
 
         elif command == "suggest":
             if not engine:
@@ -98,7 +109,9 @@ def main():
                 print("Usage: suggest <partial word>")
                 print("Example: suggest fri")
             else:
+                start = time.time()
                 suggestions = engine.suggest(argument)
+                elapsed = time.time() - start
                 if suggestions:
                     print(f"\n{'='*80}")
                     print(f"  Suggestions for '{argument}'")
@@ -109,6 +122,7 @@ def main():
                     print(f"{'='*80}")
                 else:
                     print(f"\n  No suggestions found for '{argument}'")
+                print(f"  Query completed in {elapsed:.4f}s")
 
         elif command == "help":
             print_help()
