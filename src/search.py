@@ -147,7 +147,7 @@ class SearchEngine:
     def suggest(self, partial: str) -> list[str]:
         """
         Suggest words from the index that start with the given prefix.
-        Useful for query completion — an advanced feature beyond basic requirements.
+        Useful for query completion, an advanced feature beyond basic requirements.
         Returns up to 5 suggestions sorted alphabetically.
         """
         partial = partial.lower().strip()

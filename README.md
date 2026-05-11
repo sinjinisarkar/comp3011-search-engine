@@ -31,7 +31,7 @@ comp3011-search-engine/
 ├── tests/
 │   ├── test_crawler.py   # 22 tests — crawling, URL normalisation, error handling
 │   ├── test_indexer.py   # 23 tests — indexing, tokenisation, save/load
-│   └── test_search.py    # 25 tests — search, ranking, suggestions, edge cases
+│   ├── test_search.py    # 25 tests — search, ranking, suggestions, edge cases
 │   └── test_main.py      # 19 tests — CLI commands, error handling, build/load
 ├── conftest.py           # pytest path configuration
 ├── requirements.txt      # Project dependencies
@@ -307,7 +307,7 @@ This gives O(1) lookup by word and O(1) lookup by document. A simpler dictionary
 
 ### Build Performance
 - Pages crawled: 213
-- Total build time: recorded during video demonstration
+- Total build time: 1368.2 seconds (~23 minutes)
 - Each page takes around 6 seconds due to the politeness window, plus a small amount of time for the actual network request and HTML parsing
 - The final index contains 4324 unique words across 213 pages
 
