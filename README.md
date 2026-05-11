@@ -316,14 +316,37 @@ All search operations are timed and shown directly in the terminal when you run 
 
 | Operation | Time |
 |---|---|
-| `load` index from disk | 0.044s |
-| `print` single word | 0.0010s |
-| `find` single word (38 results) | 0.0010s |
-| `find` multi-word query (3 terms) | 0.0010s |
-| `suggest` prefix lookup | 0.0021s |
+| `load` index from disk | 0.079s |
+| `print` single word | 0.0017s |
+| `find` single word (11 results) | 0.0020s |
+| `find` multi-word query (3 terms) | 0.0066s |
+| `suggest` prefix lookup | 0.0022s |
 
 Every search completes in under 5 milliseconds. This is because the index uses dictionary lookups which are O(1), IDF scores are calculated once at startup rather than on every query, and multi-word searches always start with the rarest word to keep the result set small from the beginning.
 
+---
+
+## GenAI Reflection — Copilot
+
+I used Copilot throughout this project. Below is a critical evaluation of its impact on my development process.
+
+### Where Copilot Helped
+
+- It identified that my crawler was using list.pop(0) which is O(n) and suggested using collections.deque which gives O(1) operations, I implemented this fix and added tests to verify it
+- It confirmed that dictionary of dictionaries was the right data structure for the inverted index, which matched my own research into search engine design
+- It helped me understand core concepts like BFS crawling and inverted index structure early in the project before I started writing code
+
+### Where I Went Beyond Copilot
+
+- Copilot described word frequency and positions as optional enhancements, but I implemented both because they are essential for TF-IDF ranking which is a core part of my implementation
+- Copilot generated tests that missed important edge cases including malformed HTML, non-HTTP links and URL normalisation, but I identified these gaps myself and added the missing tests
+- Copilot initially suggested a simpler dictionary of lists for the inverted index, but I rejected this because it cannot store per-document statistics needed for ranking
+
+### Learning Reflection
+
+- Copilot was most useful as a code reviewer rather than just writing code
+- Critically evaluating every suggestion deepened my understanding of the code more than blindly accepting them would have
+- All AI usage has been declared and every line of code is fully understood and justifiable
 
 ---
 
